@@ -1,0 +1,254 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="UTF-8">
+	<title>Document</title>
+	<style type="text/css">
+	* { 
+		margin: 0; 
+		padding: 0; 
+		cursor: auto; 
+	}
+ 		/*pointer none help*/
+    a { 
+    	text-decoration: none; 
+    }
+ 
+    ul, li { list-style: none; }
+
+    body { font-size: 14px; font-family: "微软雅黑"; background: url("img/bg.jpg"); }
+ 		/*小球的样式*/
+        #ball { width: 15px; height: 15px; background: #000; border-radius: 50%; position: absolute; top: 0; left: 0; box-shadow: 0 0 9px 9px #000;}
+ 		/*挡板的样式*/
+        #ward { width: 120px; height: 30px; z-index: 999; background-color: #336688; border-radius: 15px; box-shadow: 0 0 4px #333; position: absolute; left: 0; }
+ 		/*积分的样式*/
+        #score { width: 100px; height: 100px; font-size: 40px; position: absolute; right: 40px; top: 40px; color: #ff2541; }
+ 		/*砖块区域*/
+        #wrap { width: 90%; height: 500px; position: relative; top: 100px; left: 0; right: 0; margin: auto; }
+ 		/*砖块样式*/
+        #wrap div { width: 45px; height: 15px; border: 1px solid #ff645b; position: absolute; background: rgb(255, 99, 89); box-shadow: 0 0 9px 1px rgb(255, 187, 136) inset; top: 0; left: 0; transform-origin: top center }
+ 
+        #gameover { position: absolute; left: 0; right: 0; top: 0; bottom: 0; margin: auto; width: 300px; height: 200px; box-shadow: 0 0 4px #222222; background-color: #e1e1e1; display: none }
+ 
+        #gameover p { width: 100%; height: 40px; text-align: center; font-size: 36px; color: #336688; margin-top: 50px; }
+ 
+        #gameover span { width: 60%; height: 40px; display: block; margin: 38px auto 0; text-align: center; font-size: 20px; background: #336688; color: #ffffff; border-radius: 10px; line-height: 40px; }
+    </style>
+</head>
+<body>
+	<!-- 砖块区域 用来存放所有创建出来的砖块-->
+	<div id="wrap"></div>
+	<!-- 球盒子 -->
+	<div id="ball"></div>
+	<!-- 挡板盒子 -->
+	<div id="ward"></div>
+	<!-- 积分盒子 -->
+	<div id="score">0分</div>
+	<!-- 游戏结束盒子 -->
+	<div id="gameover">
+		<p>总分:</p>
+    	<span>确定</span>
+	</div>
+</body>
+<script>
+// 1. 动态添加砖块
+// 2. 初始化小球
+// 3.1 初始化挡板
+// 3.2 设置挡板跟随鼠标
+// 4. 点击页面 小球发射
+// 5.1 碰撞检测
+// 5.2 积分系统
+// 6. 游戏失败提示
+// 使用一个对象 解决所有问题 给对象绑定各种解决问题的方法函数
+
+var CreateGame = function(){
+	// 必需的属性 小球、挡板、初始位置、砖块区域
+	this.ball = document.querySelector("#ball")
+	this.ward = document.querySelector("#ward")
+	this.wrap = document.querySelector("#wrap")
+	// 小球的左定位
+	this.ballX = this.ball.offsetLeft
+	// 小球的上定位
+	this.ballY = this.ball.offsetTop
+	// 小球移动速度
+	this.speedX = 10
+	this.speedY = 10
+	// 积分
+	this.score = 0
+	// 获取积分盒子
+	this.scoreBox = document.querySelector("#score")
+	// 获取弹窗
+	this.gameoverBox = document.querySelector("#gameover")
+	// 启动游戏
+	this.startGame()
+}
+CreateGame.prototype = {
+	startGame:function(){
+		// 1. 渲染砖块
+		this.createBlock()
+		// 2. 初始化小球
+		this.initBall()
+		// 3. 初始化挡板
+		this.initWard()
+	},
+	// 创建砖块
+	createBlock:function(){
+		// 八行十二列的砖块 双层for循环的嵌套
+		for(var i = 0;i < 8;i++){
+			for(j = 0;j < 12;j++){
+				var block = document.createElement("div")
+				this.wrap.appendChild(block)
+				// 定位砖块
+				block.style.top = (block.offsetHeight * 2) * i + "px"
+				block.style.left = (block.offsetWidth * 2) * j + "px"
+			}
+		}
+	},
+	// 初始化小球
+	initBall:function(){
+		this.ball.style.top = document.documentElement.offsetHeight - 30 + "px"
+		this.ball.style.left = document.documentElement.offsetWidth/2 - this.ball.offsetWidth/2 + "px"
+		// 小球的左定位
+		// this.ballX = this.ball.offsetLeft
+		// // 小球的上定位
+		// this.ballY = this.ball.offsetTop
+		window.onclick = () => {
+			// 让小球发射
+			this.ballMove()
+		}
+	},
+	// 初始化挡板
+	initWard:function(){
+		// 挡板定位
+		this.ward.style.top = document.documentElement.offsetHeight + "px"
+		this.ward.style.left = document.documentElement.offsetWidth/2 - this.ward.offsetWidth/2 + "px"
+		// 挡板移动
+		window.onmousemove = (e) => {
+			var e = e || window.event
+			// 调用移动方法
+			this.wardMove(e)
+		}
+	},
+	wardMove:function(e){
+		var pageX = e.pageX || e.clientX + document.documentElement.scrollLeft
+		this.ward.style.left = pageX - ward.offsetWidth/2 + "px"
+		if(this.ward.offsetLeft >= document.documentElement.offsetWidth - this.ward.offsetWidth){
+			this.ward.style.left = document.documentElement.offsetWidth - this.ward.offsetWidth + "px"
+		} else if (this.ward.offsetLeft <= 0){
+			this.ward.style.left = 0
+		}
+	},
+	// 小球移动的方法
+	ballMove:function(){
+		// 小球的左定位
+		this.ballX = this.ball.offsetLeft
+		// 小球的上定位
+		this.ballY = this.ball.offsetTop
+		// 小球 移动速度 移动方向
+		// auto函数就是让小球自动移动的函数
+		var auto = () =>{
+			// 碰撞检测
+			this.crush()
+			this.ballX += this.speedX;
+			this.ballY += -this.speedY
+			this.ball.style.left = this.ballX + "px"
+			this.ball.style.top = this.ballY + "px"
+			requestAnimationFrame(auto)
+		}
+		auto()
+	},
+	// 碰撞检测
+	crush:function(){
+		// 碰到边框 挡板 砖块
+		// 上边框 x方向不变，y方向相反
+		if(this.ball.offsetTop <= 0){
+			this.ballY = 0
+			this.speedY = -this.speedY;
+		}
+		// 右边框 y方向不变，x方向相反       window.innerWidth
+		if(this.ball.offsetLeft >= document.documentElement.offsetWidth - this.ball.offsetWidth){
+			this.ballX = document.documentElement.offsetWidth - this.ball.offsetWidth
+			this.speedX = -this.speedX
+		}
+		// 左边框 y方向不变，x方向相反
+		if(this.ball.offsetLeft <= 0){
+			this.ballX = 0
+			this.speedX = -this.speedX
+		}
+		// 下边框                              window.innerHeight
+		if(this.ball.offsetTop >= document.documentElement.offsetHeight + this.ball.offsetHeight){
+			// this.ballY = document.documentElement.offsetHeight + this.ball.offsetHeight
+			// 结束游戏
+			this.overGame()
+		}
+		// 挡板
+		// 左临界 小球left要>=这个值  球left = 板left - 球宽/2
+		var ballLeftMin = this.ward.offsetLeft - this.ball.offsetWidth/2
+		// 右临界 小球left要<=这个值  球left = 板left + 板宽 - 球宽/2
+		var ballLeftMax = this.ward.offsetLeft + this.ward.offsetWidth - this.ball.offsetWidth/2
+		// 上临界 球top = 板top - 球高
+		var ballTopMin = this.ward.offsetTop - this.ball.offsetHeight
+		// 下临界 球top = 板top + 板height
+		var ballTopMax = this.ward.offsetTop + this.ward.offsetHeight
+		// 如果球碰到挡板，就让球纵向速度取负 x方向不变，y方向相反
+		var ballTop = this.ball.offsetTop
+		var ballLeft = this.ball.offsetLeft
+		if(ballTop >= ballTopMin && ballTop <= ballTopMax && ballLeft >= ballLeftMin && ballLeft <= ballLeftMax){
+			this.ballY = ballTopMin;
+			this.speedY = -this.speedY
+		}
+		// 砖块碰撞检测
+		// 1. 循环的得到所有砖块
+		var bricks = this.wrap.children
+		// console.log(bricks)
+		for(var i = 0;i < bricks.length;i++){
+			// 上下左右四个临界值
+			// 左临界   球left = 砖块left + paddingleft（砖块区域left） - 球宽/2
+			var brickLeftMin = bricks[i].offsetLeft + this.wrap.offsetLeft - this.ball.offsetWidth/2
+			// 右临界   球left = 砖块left + 砖块宽 + paddingleft（砖块区域left） - 球宽/2
+			var brickLeftMax = bricks[i].offsetLeft + bricks[i].offsetWidth + this.wrap.offsetLeft - this.ball.offsetWidth/2
+			// 上临界 球top = 砖块top + paddingtop（砖块区域top） - 球高
+			var brickTopMin = bricks[i].offsetTop + this.wrap.offsetTop - this.ball.offsetHeight
+			// 下临界 球top = 砖块top + 砖块height + paddingtop（砖块区域top）
+			var brickTopMax = bricks[i].offsetTop + bricks[i].offsetHeight + this.wrap.offsetTop
+			// console.log(brickLeftMin,brickLeftMax,brickTopMin,brickTopMax)
+			if(ballLeft >= brickLeftMin && ballLeft <= brickLeftMax && ballTop >= brickTopMin && ballTop <= brickTopMax) {
+				// 小球碰到砖块 让小球纵向反弹 x方向不变，y方向相反
+				// this.ballY = brickTopMin;
+				this.speedY = -this.speedY
+				// console.log(1)
+				this.wrap.removeChild(bricks[i])
+				// 得分
+				this.sumScore()
+				// 如果砖块打完了，游戏结束
+				if(bricks.length == 0){
+					this.overGame()
+				}
+			}
+		}
+	},
+	// 计算得分的功能函数
+	sumScore:function(){
+		this.score++
+		// 将当前得分显示
+		this.scoreBox.innerHTML = this.score + "分"
+	},
+	// 游戏结束
+	overGame:function(){
+		// 1. 弹窗显示
+		this.gameoverBox.style.display = "block";
+		// 2. 小球和挡板消失
+		document.body.removeChild(this.ball)
+		document.body.removeChild(this.ward)
+		// 把得分渲染进弹窗
+		this.gameoverBox.children[0].innerHTML = "总分：" + this.score
+		this.gameoverBox.children[1].onclick = () => {
+			// this.gameoverBox.style.display = "none";
+			// 让整个页面重新加载
+			location.reload()
+		}
+	}
+}
+new CreateGame()
+</script>
+</html>
